@@ -9,6 +9,8 @@ app = FastAPI(
 
 origins = [
     "http://localhost:3000",
+    # сюда потом можно добавить URL фронта на Render или другом хостинге
+    # "https://tripgenius-frontend.onrender.com",
 ]
 
 app.add_middleware(
@@ -20,13 +22,21 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def root():
+    return {"message": "TripGenius API is running"}
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
 
 @app.get("/api/deals")
-def get_deals(city_from: str = "spb"):
+def get_deals(
+    city_from: str = "spb",
+):
+    # Заглушка с одним примером тура — под фронт можно будет расширить
     return {
         "city_from": city_from,
         "deals": [
@@ -35,6 +45,8 @@ def get_deals(city_from: str = "spb"):
                 "title": "СПб → Байкал, 7 дней, 18 500 ₽",
                 "price": 18500,
                 "nights": 7,
+                "date_from": "2025-02-10",
+                "date_to": "2025-02-17",
             }
         ],
     }
