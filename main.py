@@ -6,6 +6,25 @@ from database import init_db, get_hot_offers
 
 init_db()
 
+class Deal(BaseModel):
+    id: int
+    raw_id: int
+    city_from: str
+    city_to: Optional[str] = None
+    country_to: str
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    nights: Optional[int] = None
+    price: int
+    source: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class DealsResponse(BaseModel):
+    city_from: str
+    country_to: str
+    deals: List[Deal]
+
 app = FastAPI(
     title="TripGenius Backend",
     description="API для поиска и выдачи горящих туров",
