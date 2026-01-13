@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from database import init_db, get_hot_offers
+
+init_db()
+
 
 app = FastAPI(
     title="TripGenius Backend",
