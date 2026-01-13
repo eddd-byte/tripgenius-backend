@@ -1,9 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, get_hot_offers
 
 init_db()
-
 
 app = FastAPI(
     title="TripGenius Backend",
@@ -38,20 +37,19 @@ def health_check():
 
 @app.get("/api/deals")
 def get_deals(
-    city_from: str = "spb",
+    city_from: str = Query("spb", description="Код города вылета, например 'spb'"),
+    country_to: str = Query("turkey", description="Код страны назначения, например 'turkey'"),
+    limit: int = Query(50, ge=1, le=200, description="Максимум офферов в ответе"),
 ):
-    # Заглушка с одним примером тура — под фронт можно будет расширить
+    """
+    Возвращает горячие туры из offers_hot для заданных city_from и country_to.
+    Пример: /api/deals?city_from=spb&country_to=turkey
+    """
+    deals = get_hot_offers(city_from=city_from, country_to=country_to, limit=limit)
+
     return {
         "city_from": city_from,
-        "deals": [
-            {
-                "id": 1,
-                "title": "СПб → Байкал, 7 дней, 18 500 ₽",
-                "price": 18500,
-                "nights": 7,
-                "date_from": "2025-02-10",
-                "date_to": "2025-02-17",
-            }
-        ],
+        "country_to": country_to,
+        "deals": deals,
     }
 
