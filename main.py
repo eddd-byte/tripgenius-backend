@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+from typing import List, Optional
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, get_hot_offers
