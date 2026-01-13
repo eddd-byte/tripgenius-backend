@@ -1,14 +1,17 @@
-from pydantic import BaseModel
 from typing import List, Optional
+
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from database import init_db, get_hot_offers
 from pydantic import BaseModel
-from typing import List, Optional
+
+from database import init_db, get_hot_offers
 
 
+# Инициализация БД при старте приложения
 init_db()
 
+
+# ===== Pydantic-модели =====
 
 class TripCardV1(BaseModel):
     id: int
@@ -52,6 +55,8 @@ class DealsResponse(BaseModel):
     deals: List[TripCardV1]
 
 
+# ===== FastAPI-приложение =====
+
 app = FastAPI(
     title="TripGenius Backend",
     description="API для поиска и выдачи горящих туров",
@@ -60,8 +65,8 @@ app = FastAPI(
 
 origins = [
     "http://localhost:3000",
-    # сюда потом можно добавить URL фронта на Render или другом хостинге
-    # "https://tripgenius-frontend.onrender.com",
+    # сюда потом можно добавить URL фронта на проде
+    # "https://tripgenius-frontend.vercel.app",
 ]
 
 app.add_middleware(
@@ -78,15 +83,24 @@ def root():
     return {"message": "TripGenius API is running"}
 
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
 @app.get("/api/deals", response_model=DealsResponse)
 def get_deals(
     city_from: str = Query("spb", description="Код города вылета, например 'spb'"),
     country_to: str = Query("turkey", description="Код страны назначения, например 'turkey'"),
     limit: int = Query(50, ge=1, le=200, description="Максимум офферов в ответе"),
 ):
+    """
+    Возвращает горячие туры из offers_hot для заданных city_from и country_to.
+    Пример: /api/deals?city_from=spb&country_to=turkey
+    """
     rows = get_hot_offers(city_from=city_from, country_to=country_to, limit=limit)
 
-    # Простые маппинги названий для первой версии
+    # Простые маппинги названий для первой версии (можно потом вынести в конфиг/БД)
     city_name_map = {
         "spb": "Санкт-Петербург",
         "msk": "Москва",
@@ -127,7 +141,6 @@ def get_deals(
             country_to_name=country_to_name,
             title=title,
             subtitle=subtitle,
-            # Пока жёстко: все как пакетные туры, без прямых рейсов
             offer_type="package",
             is_direct=None,
             date_from=row.get("date_from"),
@@ -138,8 +151,8 @@ def get_deals(
             currency="RUB",
             discount_percent=None,
             published_at=row.get("created_at"),
-            deal_url=None,     # позже сюда пойдут партнёрские ссылки Travelpayouts
-            image_url=None,    # позже — картинки по направлениям
+            deal_url=None,   # позже сюда пойдут партнёрские ссылки
+            image_url=None,  # позже — картинки по направлениям
             source=row.get("source"),
             source_label=None,
         )
@@ -151,3 +164,4 @@ def get_deals(
         total=len(deals),
         deals=deals,
     )
+
