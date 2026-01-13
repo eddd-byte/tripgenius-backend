@@ -56,7 +56,7 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.get("/api/deals")
+@app.get("/api/deals", response_model=DealsResponse)
 def get_deals(
     city_from: str = Query("spb", description="Код города вылета, например 'spb'"),
     country_to: str = Query("turkey", description="Код страны назначения, например 'turkey'"),
