@@ -1,10 +1,15 @@
 from typing import List, Optional
-
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
 from database import init_db, get_hot_offers
+from typing import Optional, List
+from fastapi import Query
+from database import get_hot_offers
+from schemas import Deal, DealsV2Response, DealType
+
+
+
 
 
 # Инициализация БД при старте приложения
@@ -165,3 +170,56 @@ def get_deals(
         deals=deals,
     )
 
+@app.get("/api/deals_v2", response_model=DealsV2Response)
+async def get_deals_v2(
+    city_from: Optional[str] = Query(None),
+    country_to: Optional[str] = Query(None),
+    type: Optional[DealType] = Query(None),
+    limit: int = Query(24, ge=1, le=100),
+):
+    if not city_from or not country_to:
+        return DealsV2Response(
+            deals=[],
+            filters={"city_from": city_from, "country_to": country_to, "type": type},
+        )
+
+    rows = get_hot_offers(city_from=city_from, country_to=country_to, limit=limit)
+
+    deals: List[Deal] = []
+    for row in rows:
+        title = f"Тур из {row['city_from']} в {row.get('city_to') or row.get('country_to')}"
+        subtitle_parts = []
+        if row.get("nights"):
+            subtitle_parts.append(f"{row['nights']} ночей")
+        if row.get("date_from") and row.get("date_to"):
+            subtitle_parts.append(f"{row['date_from']} – {row['date_to']}")
+        subtitle = " • ".join(subtitle_parts) if subtitle_parts else None
+
+        deal = Deal(
+            id=str(row["id"]),
+            type="tour",
+            city_from=row["city_from"],
+            city_to=row.get("city_to"),
+            country_to=row.get("country_to"),
+            title=title,
+            subtitle=subtitle,
+            price=int(row["price"]),
+            currency="RUB",
+            date_from=row.get("date_from"),
+            date_to=row.get("date_to"),
+            nights=row.get("nights"),
+            people=None,
+            provider=row.get("source") or "unknown",
+            deep_link="#",
+            image_url=None,
+            meta={
+                "source": row.get("source"),
+                "created_at": row.get("created_at"),
+            },
+        )
+        deals.append(deal)
+
+    return DealsV2Response(
+        deals=deals,
+        filters={"city_from": city_from, "country_to": country_to, "type": type},
+    )
